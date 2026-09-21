@@ -1,0 +1,46 @@
+{
+  "name": "finpulse-api",
+  "version": "1.0.0",
+  "description": "RESTful API for FinPulse personal and small business financial tracker",
+  "keywords": [
+    "fintech",
+    "financial-tracker",
+    "personal-finance",
+    "small-business-finance",
+    "rest-api",
+    "backend",
+    "typescript",
+    "nodejs",
+    "postgresql",
+    "prisma",
+    "jwt-authentication",
+    "multi-currency",
+    "swagger-documentation"
+  ],
+  "license": "ISC",
+  "author": "William Soeparman",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.10.0",
+    "bcrypt": "^6.0.0",
+    "express": "^5.2.1",
+    "winston": "^3.19.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.2",
+    "@types/supertest": "^7.2.1",
+    "prisma": "^7.10.0",
+    "supertest": "^7.2.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1"
+  }
+}

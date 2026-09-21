@@ -1,0 +1,126 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN  @map("admin")
+  USER   @map("user")
+  VIEWER @map("viewer")
+
+  @@map("role_type")
+}
+
+enum TransactionType {
+  INCOME   @map("income")
+  EXPENSE  @map("expense")
+  TRANSFER @map("transfer")
+
+  @@map("transaction_type")
+}
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique @db.VarChar(100)
+  password  String   @db.VarChar(100)
+  name      String   @db.VarChar(100)
+  role      Role     @default(USER)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  wallets       Wallet[]
+  categories    Category[]
+  budgets       Budget[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  token     String   @unique @db.Text
+  userId    String   @map("user_id") @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  expiresAt DateTime @map("expires_at") @db.Timestamptz()
+
+  @@map("refresh_tokens")
+}
+
+model Wallet {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(100)
+  currency  String   @default("IDR") @db.VarChar(3) //ISO 4217 Currency Code (e.g. IDR, USD, EUR)
+  balance   Decimal  @default(0.0) @db.Decimal(18, 4)
+  userId    String   @map("user_id") @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  sourceTransactions Transaction[] @relation("SourceWallet")
+  targetTransactions Transaction[] @relation("TargetWallet")
+
+  @@map("wallets")
+}
+
+model Category {
+  id        String          @id @default(uuid()) @db.Uuid
+  name      String          @db.VarChar(100)
+  type      TransactionType
+  userId    String          @map("user_id") @db.Uuid
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime        @default(now()) @map("created_at") @db.Timestamptz()
+
+  transactions Transaction[]
+  budgets      Budget[]
+
+  @@map("categories")
+}
+
+model Transaction {
+  id           String          @id @default(uuid()) @db.Uuid
+  amount       Decimal         @db.Decimal(18, 4)
+  currency     String          @default("IDR") @db.VarChar(3)
+  exchangeRate Decimal         @default(1.0) @map("exchange_rate") @db.Decimal(12, 6)
+  type         TransactionType
+  note         String?         @db.Text
+  date         DateTime        @default(now()) @db.Timestamptz()
+
+  walletId String @map("wallet_id") @db.Uuid
+  wallet   Wallet @relation("SourceWallet", fields: [walletId], references: [id], onDelete: Cascade)
+
+  targetWalletId String? @map("target_wallet_id") @db.Uuid
+  targetWallet   Wallet? @relation("TargetWallet", fields: [targetWalletId], references: [id], onDelete: Cascade)
+
+  categoryId String?   @map("category_id") @db.Uuid
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@map("transactions")
+}
+
+model Budget {
+  id         String   @id @default(uuid()) @db.Uuid
+  amount     Decimal  @db.Decimal(18, 4)
+  month      Int      @db.SmallInt
+  year       Int      @db.SmallInt
+  userId     String   @map("user_id") @db.Uuid
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId String   @map("category_id") @db.Uuid
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@map("budgets")
+}
