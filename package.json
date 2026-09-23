@@ -29,21 +29,22 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.10.0",
-    "@prisma/client": "^7.10.0",
+    "@prisma/client": "^6.4.0",
     "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "express": "^5.2.1",
-    "pg": "^8.23.0",
+    "jsonwebtoken": "^9.0.3",
     "winston": "^3.19.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.6.2",
-    "@types/pg": "^8.23.1",
     "@types/supertest": "^7.2.1",
-    "prisma": "^7.10.0",
+    "prisma": "^6.4.0",
     "supertest": "^7.2.2",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
