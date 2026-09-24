@@ -1,25 +1,20 @@
 import { describe, it, expect } from "vitest";
 import request from "supertest";
 import app from "../src/app.js";
+import { getAccessToken, TEST_USERS } from './helpers/auth.helper.js';
 
 describe("POST /api/v1/auth/register", () => {
-    const validUser = {
-        name: "Arya Meranggi",
-        email: "aryameranggi@gmail.com",
-        password: "SecretPassword123",
-    };
-
     // 1. HAPPY PATH
     it("should register a new user successfully with valid input", async () => {
         const response = await request(app)
             .post("/api/v1/auth/register")
-            .send(validUser);
+            .send(TEST_USERS.userA);
 
         expect(response.status).toBe(201);
         expect(response.body.status).toBe("success");
         expect(response.body.data.user).toHaveProperty("id");
-        expect(response.body.data.user.name).toBe(validUser.name);
-        expect(response.body.data.user.email).toBe(validUser.email);
+        expect(response.body.data.user.name).toBe(TEST_USERS.userA.name);
+        expect(response.body.data.user.email).toBe(TEST_USERS.userA.email);
         expect(response.body.data.user).not.toHaveProperty("password");
     });
 
@@ -28,7 +23,7 @@ describe("POST /api/v1/auth/register", () => {
         const response = await request(app)
             .post("/api/v1/auth/register")
             .send({
-                ...validUser,
+                ...TEST_USERS.userA,
                 name: "A",
             });
 
@@ -41,7 +36,7 @@ describe("POST /api/v1/auth/register", () => {
         const response = await request(app)
             .post("/api/v1/auth/register")
             .send({
-                ...validUser,
+                ...TEST_USERS.userA,
                 email: "invalid-email-format",
             });
 
@@ -54,7 +49,7 @@ describe("POST /api/v1/auth/register", () => {
         const response = await request(app)
             .post("/api/v1/auth/register")
             .send({
-                ...validUser,
+                ...TEST_USERS.userA,
                 password: "123",
             });
 
@@ -74,11 +69,11 @@ describe("POST /api/v1/auth/register", () => {
 
     // 3. CONFLICT / DUPLICATE EMAIL
     it("should fail when email is already registered", async () => {
-        await request(app).post("/api/v1/auth/register").send(validUser);
+        await request(app).post("/api/v1/auth/register").send(TEST_USERS.userA);
 
         const response = await request(app)
             .post("/api/v1/auth/register")
-            .send(validUser);
+            .send(TEST_USERS.userA);
 
         expect(response.status).toBe(409);
         expect(response.body.status).toBe("fail");
@@ -87,21 +82,15 @@ describe("POST /api/v1/auth/register", () => {
 });
 
 describe("POST /api/v1/auth/login", () => {
-    const registeredUser = {
-        name: "Arya Meranggi",
-        email: "aryameranggi@gmail.com",
-        password: "SecretPassword123",
-    };
-
     // 1. HAPPY PATH
     it("should login successfully, return access token, and set refresh token cookie", async () => {
-        await request(app).post("/api/v1/auth/register").send(registeredUser);
+        await request(app).post("/api/v1/auth/register").send(TEST_USERS.userA);
 
         const response = await request(app)
             .post("/api/v1/auth/login")
             .send({
-                email: registeredUser.email,
-                password: registeredUser.password,
+                email: TEST_USERS.userA.email,
+                password: TEST_USERS.userA.password,
             });
 
         expect(response.status).toBe(200);
@@ -111,7 +100,7 @@ describe("POST /api/v1/auth/login", () => {
         // Verify the data response structure.
         expect(response.body.data).toHaveProperty("accessToken");
         expect(response.body.data.user).toHaveProperty("id");
-        expect(response.body.data.user.email).toBe(registeredUser.email);
+        expect(response.body.data.user.email).toBe(TEST_USERS.userA.email);
         expect(response.body.data.user).not.toHaveProperty("password");
 
         // Refresh Token Cookie Verification
@@ -139,7 +128,7 @@ describe("POST /api/v1/auth/login", () => {
         const response = await request(app)
             .post("/api/v1/auth/login")
             .send({
-                email: registeredUser.email,
+                email: TEST_USERS.userA.email,
             });
 
         expect(response.status).toBe(400);
@@ -162,12 +151,12 @@ describe("POST /api/v1/auth/login", () => {
     });
 
     it("should fail login when password is incorrect", async () => {
-        await request(app).post("/api/v1/auth/register").send(registeredUser);
+        await request(app).post("/api/v1/auth/register").send(TEST_USERS.userA);
 
         const response = await request(app)
             .post("/api/v1/auth/login")
             .send({
-                email: registeredUser.email,
+                email: TEST_USERS.userA.email,
                 password: "WrongPassword999",
             });
 
@@ -178,21 +167,15 @@ describe("POST /api/v1/auth/login", () => {
 });
 
 describe("POST /api/v1/auth/refresh-token", () => {
-    const registeredUser = {
-        name: "Arya Meranggi",
-        email: "aryameranggi@gmail.com",
-        password: "SecretPassword123",
-    };
-
     // Helper for time delay
     const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
     // 1. HAPPY PATH & TOKEN ROTATION
     it("should refresh access token successfully and rotate refresh token in database & cookie", async () => {
-        await request(app).post("/api/v1/auth/register").send(registeredUser);
+        await request(app).post("/api/v1/auth/register").send(TEST_USERS.userA);
         const loginRes = await request(app).post("/api/v1/auth/login").send({
-            email: registeredUser.email,
-            password: registeredUser.password,
+            email: TEST_USERS.userA.email,
+            password: TEST_USERS.userA.password,
         });
 
         const oldCookies = loginRes.headers["set-cookie"];
@@ -253,19 +236,13 @@ describe("POST /api/v1/auth/refresh-token", () => {
 });
 
 describe("POST /api/v1/auth/logout", () => {
-    const registeredUser = {
-        name: "Arya Meranggi",
-        email: "aryameranggi@gmail.com",
-        password: "SecretPassword123",
-    };
-
     // 1. HAPPY PATH
     it("should logout successfully, delete refresh token from database, and clear cookie", async () => {
-        await request(app).post("/api/v1/auth/register").send(registeredUser);
+        await request(app).post("/api/v1/auth/register").send(TEST_USERS.userA);
 
         const loginRes = await request(app).post("/api/v1/auth/login").send({
-            email: registeredUser.email,
-            password: registeredUser.password,
+            email: TEST_USERS.userA.email,
+            password: TEST_USERS.userA.password,
         });
 
         const cookies = loginRes.headers["set-cookie"];
@@ -305,18 +282,12 @@ describe("POST /api/v1/auth/logout", () => {
 });
 
 describe("GET /api/v1/auth/me", () => {
-    const registeredUser = {
-        name: "Arya Meranggi",
-        email: "aryameranggi@gmail.com",
-        password: "SecretPassword123",
-    };
-
     // 1. HAPPY PATH
     it("should return user profile when valid bearer access token is provided", async () => {
-        await request(app).post("/api/v1/auth/register").send(registeredUser);
+        await request(app).post("/api/v1/auth/register").send(TEST_USERS.userA);
         const loginRes = await request(app).post("/api/v1/auth/login").send({
-            email: registeredUser.email,
-            password: registeredUser.password,
+            email: TEST_USERS.userA.email,
+            password: TEST_USERS.userA.password,
         });
 
         const accessToken = loginRes.body.data.accessToken;
@@ -328,8 +299,8 @@ describe("GET /api/v1/auth/me", () => {
         expect(response.status).toBe(200);
         expect(response.body.status).toBe("success");
         expect(response.body.data.user).toHaveProperty("id");
-        expect(response.body.data.user.email).toBe(registeredUser.email);
-        expect(response.body.data.user.name).toBe(registeredUser.name);
+        expect(response.body.data.user.email).toBe(TEST_USERS.userA.email);
+        expect(response.body.data.user.name).toBe(TEST_USERS.userA.name);
         expect(response.body.data.user).not.toHaveProperty("password");
     });
 
