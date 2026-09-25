@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import request from "supertest";
 import app from "../src/app.js";
-import { getAccessToken, TEST_USERS } from './helpers/auth.helper.js';
+import { TEST_USERS } from './helpers/auth.helper.js';
+import {prisma} from "../src/config/prisma.js";
 
 describe("POST /api/v1/auth/register", () => {
     // 1. HAPPY PATH
@@ -181,6 +182,26 @@ describe("POST /api/v1/auth/refresh-token", () => {
         const oldCookies = loginRes.headers["set-cookie"];
         const oldAccessToken = loginRes.body.data.accessToken;
 
+        // Helper to parse the token value from the Set-Cookie header.
+        const extractRefreshToken = (cookies: string[] | string | undefined): string | null => {
+            if (!cookies) return null;
+
+            const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
+            const cookieHeader = cookieArray.find((c) => c.startsWith("refreshToken="));
+
+            if (!cookieHeader) return null;
+            return cookieHeader.split(";")[0].split("=")[1] || null;
+        };
+
+        const oldRefreshToken = extractRefreshToken(oldCookies);
+        expect(oldRefreshToken).not.toBeNull();
+
+        // Verify the old token stored in the DB before refreshing.
+        const tokenInDbBefore = await prisma.refreshToken.findFirst({
+            where: { token: oldRefreshToken! }
+        });
+        expect(tokenInDbBefore).not.toBeNull();
+
         await sleep(1000);
 
         const response = await request(app)
@@ -191,14 +212,28 @@ describe("POST /api/v1/auth/refresh-token", () => {
         expect(response.body.status).toBe("success");
         expect(response.body.message).toBe("Token refreshed successfully");
 
+        // Verify the new Access Token
         expect(response.body.data).toHaveProperty("accessToken");
         const newAccessToken = response.body.data.accessToken;
         expect(newAccessToken).not.toBe(oldAccessToken);
 
+        // Verify New Refresh Token Cookie Value (Strict Value Match)
         const newCookies = response.headers["set-cookie"];
-        expect(newCookies).toBeDefined();
-        expect(newCookies[0]).toContain("refreshToken=");
-        expect(newCookies[0]).not.toBe(oldCookies[0]);
+        const newRefreshToken = extractRefreshToken(newCookies);
+
+        expect(newRefreshToken).not.toBeNull();
+        expect(newRefreshToken).not.toBe(oldRefreshToken);
+
+        // Verification of Token Rotation in the Database (Old Token Revoked/Deleted & New Token Injected)
+        const oldTokenInDbAfter = await prisma.refreshToken.findFirst({
+            where: { token: oldRefreshToken! }
+        });
+        expect(oldTokenInDbAfter).toBeNull(); // The old token must be deleted.
+
+        const newTokenInDbAfter = await prisma.refreshToken.findFirst({
+            where: { token: newRefreshToken! }
+        });
+        expect(newTokenInDbAfter).not.toBeNull(); // The new token must be registered in the database.
     });
 
     // 2. SECURITY & VALIDATION FAILURES
