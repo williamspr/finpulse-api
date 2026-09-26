@@ -6,6 +6,8 @@ import authRoute from "./route/auth-route.js";
 import walletRoute from "./route/wallet-route.js";
 import categoryRouter from "./route/category-route.js";
 import transactionRouter from "./route/transaction-route.js";
+import budgetRouter from "./route/budget-route.js";
+import reportRouter from "./route/report-route.js";
 
 const app: Application = express();
 
@@ -16,6 +18,8 @@ app.use('/api/v1/auth', authRoute);
 app.use('/api/v1/wallets', walletRoute);
 app.use("/api/v1/categories", categoryRouter);
 app.use("/api/v1/transactions", transactionRouter);
+app.use("/api/v1/budgets", budgetRouter);
+app.use("/api/v1/reports", reportRouter);
 
 // Health Check Endpoint
 app.get('/health', (_req: Request, res: Response) => {
