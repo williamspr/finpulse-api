@@ -5,6 +5,7 @@ import {errorHandler} from "./middleware/error-handler.js";
 import authRoute from "./route/auth-route.js";
 import walletRoute from "./route/wallet-route.js";
 import categoryRouter from "./route/category-route.js";
+import transactionRouter from "./route/transaction-route.js";
 
 const app: Application = express();
 
@@ -14,6 +15,7 @@ app.use(cookieParser());
 app.use('/api/v1/auth', authRoute);
 app.use('/api/v1/wallets', walletRoute);
 app.use("/api/v1/categories", categoryRouter);
+app.use("/api/v1/transactions", transactionRouter);
 
 // Health Check Endpoint
 app.get('/health', (_req: Request, res: Response) => {
