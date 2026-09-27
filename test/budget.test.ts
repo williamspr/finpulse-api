@@ -6,7 +6,7 @@ import {
     expectNotFoundError,
     createTestWallet
 } from "./helpers/transaction.helper.js";
-import { clearBudgets, createTestBudget } from "./helpers/budget.helper.js";
+import { createTestBudget } from "./helpers/budget.helper.js";
 import { TEST_USERS, getAccessToken } from "./helpers/auth.helper.js";
 
 describe("POST /api/v1/budgets", () => {
