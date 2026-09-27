@@ -34,3 +34,7 @@ coverage/
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# AI Agent / Tooling metadata
+skills-lock.json
+.skills/
