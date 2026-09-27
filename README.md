@@ -43,7 +43,7 @@ Ensure you have the following installed on your local machine:
 
 1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/williamspr/finpulse-api.git](https://github.com/williamspr/finpulse-api.git)
+   git clone https://github.com/williamspr/finpulse-api.git
    cd finpulse-api
    ```
 
