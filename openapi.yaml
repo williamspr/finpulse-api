@@ -1,0 +1,1796 @@
+openapi: 3.0.3
+info:
+  title: FinPulse API Documentation
+  description: Complete API documentation for FinPulse Application covering Authentication, Wallet Management, Categories, Transactions, Budgets, and Financial Analytics & Reporting.
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000/api/v1
+    description: Local Development Server
+
+tags:
+  - name: Auth & User Management
+    description: Authentication, session rotation, and user profile management
+  - name: Wallet Management
+    description: Managing wallets, bank accounts, and currency balances
+  - name: Category Management
+    description: Transaction category configuration (INCOME, EXPENSE, TRANSFER)
+  - name: Transaction Management
+    description: Income, Expense, and Cross-Currency Transfer transaction operations with automatic wallet balance management
+  - name: Budget Management
+    description: Setting monthly expense budgets and tracking spending limits against real-time transactions
+  - name: Report & Analytics
+    description: Financial summary reporting and multi-format document exporting (PDF/CSV)
+
+paths:
+  # ==========================================
+  # AUTH & USER MANAGEMENT
+  # ==========================================
+  /auth/register:
+    post:
+      tags:
+        - Auth & User Management
+      summary: Register new user account
+      description: Create a new user account with default role USER.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterInput'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: User registered successfully
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/UserProfile'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '409':
+          description: Email is already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: fail
+                message: Email is already registered
+
+  /auth/login:
+    post:
+      tags:
+        - Auth & User Management
+      summary: User login
+      description: Authenticate user, return Access Token in response body, and set Refresh Token in HttpOnly cookie.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
+      responses:
+        '200':
+          description: Logged in successfully
+          headers:
+            Set-Cookie:
+              description: HTTP-only cookie containing the Refresh Token (valid for 7 days)
+              schema:
+                type: string
+                example: refreshToken=eyJhbGciOiJIUzI1...; Path=/; HttpOnly; Secure; SameSite=Strict
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Logged in successfully
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/UserLoginResponse'
+                      accessToken:
+                        type: string
+                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: fail
+                message: Invalid email or password
+
+  /auth/refresh-token:
+    post:
+      tags:
+        - Auth & User Management
+      summary: Rotate Access Token
+      description: Refresh an expired Access Token using the Refresh Token provided in the HttpOnly cookie.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Token refreshed successfully
+          headers:
+            Set-Cookie:
+              description: HTTP-only cookie containing the new Refresh Token
+              schema:
+                type: string
+                example: refreshToken=eyJhbGciOiJIUzI1...; Path=/; HttpOnly; Secure; SameSite=Strict
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Token refreshed successfully
+                  data:
+                    type: object
+                    properties:
+                      accessToken:
+                        type: string
+                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '401':
+          description: Refresh Token missing, invalid, or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                MissingToken:
+                  summary: Token not provided
+                  value:
+                    status: fail
+                    message: Refresh token is required
+                InvalidToken:
+                  summary: Invalid or expired token
+                  value:
+                    status: fail
+                    message: Invalid or expired refresh token
+                RevokedToken:
+                  summary: Token not found in database
+                  value:
+                    status: fail
+                    message: Refresh token not found or revoked
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth & User Management
+      summary: User logout
+      description: Revoke Refresh Token from database and clear the HttpOnly cookie.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Logged out successfully
+          headers:
+            Set-Cookie:
+              description: Header used to clear the Refresh Token cookie
+              schema:
+                type: string
+                example: refreshToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Logged out successfully
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+
+  /auth/me:
+    get:
+      tags:
+        - Auth & User Management
+      summary: Get current user profile
+      description: Retrieve profile information for the currently authenticated user.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Profile data retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/UserProfileDetailed'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: fail
+                message: User not found
+
+  # ==========================================
+  # WALLET MANAGEMENT
+  # ==========================================
+  /wallets:
+    post:
+      tags:
+        - Wallet Management
+      summary: Create a new wallet
+      description: Create a new wallet/account for the authenticated user.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWalletInput'
+      responses:
+        '201':
+          description: Wallet created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Wallet created successfully
+                  data:
+                    type: object
+                    properties:
+                      wallet:
+                        $ref: '#/components/schemas/WalletResponse'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+
+    get:
+      tags:
+        - Wallet Management
+      summary: Get user wallets
+      description: Retrieve all wallets belonging to the authenticated user ordered by creation date descending.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Wallets retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Wallets retrieved successfully
+                  data:
+                    type: object
+                    properties:
+                      wallets:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/WalletResponse'
+                      summary:
+                        type: object
+                        properties:
+                          totalWallets:
+                            type: integer
+                            example: 2
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+
+  /wallets/{id}:
+    get:
+      tags:
+        - Wallet Management
+      summary: Get wallet by ID
+      description: Retrieve specific wallet details by ID belonging to the authenticated user.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WalletIdPathParam'
+      responses:
+        '200':
+          description: Wallet retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Wallet retrieved successfully
+                  data:
+                    type: object
+                    properties:
+                      wallet:
+                        $ref: '#/components/schemas/WalletResponse'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '404':
+          $ref: '#/components/responses/404WalletNotFound'
+
+    patch:
+      tags:
+        - Wallet Management
+      summary: Update wallet
+      description: Update name and/or currency of an existing wallet. Requires at least one field to be provided.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WalletIdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWalletInput'
+      responses:
+        '200':
+          description: Wallet updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Wallet updated successfully
+                  data:
+                    type: object
+                    properties:
+                      wallet:
+                        $ref: '#/components/schemas/WalletResponse'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '404':
+          $ref: '#/components/responses/404WalletNotFound'
+
+    delete:
+      tags:
+        - Wallet Management
+      summary: Delete wallet
+      description: Delete a specific wallet owned by the authenticated user.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WalletIdPathParam'
+      responses:
+        '200':
+          description: Wallet deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Wallet deleted successfully
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '404':
+          $ref: '#/components/responses/404WalletNotFound'
+
+  # ==========================================
+  # CATEGORY MANAGEMENT
+  # ==========================================
+  /categories:
+    post:
+      tags:
+        - Category Management
+      summary: Create transaction category
+      description: Create a new category (INCOME, EXPENSE, or TRANSFER) for the authenticated user.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCategoryInput'
+      responses:
+        '201':
+          description: Category created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Category created successfully
+                  data:
+                    type: object
+                    properties:
+                      category:
+                        $ref: '#/components/schemas/CategoryResponse'
+        '400':
+          description: Validation error or duplicate category name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                ValidationError:
+                  summary: Zod Validation Error
+                  value:
+                    status: fail
+                    message: Validation error
+                    errors:
+                      - field: body.name
+                        message: Category name must be at least 2 characters long
+                DuplicateCategory:
+                  summary: Duplicate Name & Type
+                  value:
+                    status: fail
+                    message: Category with this name and type already exists
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+
+    get:
+      tags:
+        - Category Management
+      summary: Get user categories
+      description: Retrieve all categories belonging to the authenticated user with optional filter by type.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: type
+          in: query
+          required: false
+          description: Filter categories by type
+          schema:
+            type: string
+            enum: [INCOME, EXPENSE, TRANSFER]
+      responses:
+        '200':
+          description: Categories retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Categories retrieved successfully
+                  data:
+                    type: object
+                    properties:
+                      categories:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/CategoryResponse'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+
+  /categories/{id}:
+    delete:
+      tags:
+        - Category Management
+      summary: Delete category
+      description: Delete a specific category owned by the authenticated user.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CategoryIdPathParam'
+      responses:
+        '200':
+          description: Category deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Category deleted successfully
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          description: Forbidden - User does not own the category
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: fail
+                message: You do not have permission to delete this category
+        '404':
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: fail
+                message: Category not found
+
+  # ==========================================
+  # TRANSACTIONS
+  # ==========================================
+  /transactions:
+    post:
+      tags:
+        - Transaction Management
+      summary: Create transaction
+      description: Create a new INCOME, EXPENSE, or TRANSFER transaction. Wallet balances are updated automatically.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransactionInput'
+      responses:
+        '201':
+          description: Transaction created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Transaction created successfully
+                  data:
+                    type: object
+                    properties:
+                      transaction:
+                        $ref: '#/components/schemas/TransactionResponse'
+        '400':
+          description: Validation error, insufficient balance, or missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                ValidationError:
+                  summary: Zod / Refine Validation Error
+                  value:
+                    status: fail
+                    message: Validation Error
+                    errors:
+                      - field: body.targetWalletId
+                        message: Target wallet ID is required for TRANSFER type
+                InsufficientBalance:
+                  summary: Insufficient Balance
+                  value:
+                    status: fail
+                    message: Insufficient wallet balance
+                CategoryTypeMismatch:
+                  summary: Category Mismatch
+                  value:
+                    status: fail
+                    message: "Category type mismatch. Expected EXPENSE, got INCOME"
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '404':
+          description: Source wallet, target wallet, or category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: fail
+                message: Source wallet not found
+
+    get:
+      tags:
+        - Transaction Management
+      summary: Get paginated transactions
+      description: Retrieve user transactions with filtering, searching, and pagination.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Page number (default 1)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          description: Items per page (default 10, max 100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: search
+          in: query
+          required: false
+          description: Search text in transaction notes
+          schema:
+            type: string
+        - name: type
+          in: query
+          required: false
+          description: Filter by transaction type
+          schema:
+            type: string
+            enum: [INCOME, EXPENSE, TRANSFER]
+        - name: currency
+          in: query
+          required: false
+          description: Filter by 3-letter ISO currency code
+          schema:
+            type: string
+            minLength: 3
+            maxLength: 3
+            example: IDR
+        - name: startDate
+          in: query
+          required: false
+          description: Filter by start date (ISO 8601 string)
+          schema:
+            type: string
+            format: date-time
+            example: 2026-09-01T00:00:00.000Z
+        - name: endDate
+          in: query
+          required: false
+          description: Filter by end date (ISO 8601 string)
+          schema:
+            type: string
+            format: date-time
+            example: 2026-09-30T23:59:59.000Z
+      responses:
+        '200':
+          description: Transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Transactions retrieved successfully
+                  data:
+                    type: object
+                    properties:
+                      transactions:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TransactionDetailedResponse'
+                      pagination:
+                        $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+
+  /transactions/{id}:
+    get:
+      tags:
+        - Transaction Management
+      summary: Get transaction by ID
+      description: Retrieve detailed information of a specific transaction.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TransactionIdPathParam'
+      responses:
+        '200':
+          description: Transaction retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Transaction retrieved successfully
+                  data:
+                    type: object
+                    properties:
+                      transaction:
+                        $ref: '#/components/schemas/TransactionDetailedResponse'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '404':
+          $ref: '#/components/responses/404TransactionNotFound'
+
+    patch:
+      tags:
+        - Transaction Management
+      summary: Update transaction
+      description: Update transaction details with automatic wallet balance recalculation and reversion.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TransactionIdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTransactionInput'
+      responses:
+        '200':
+          description: Transaction updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Transaction updated successfully
+                  data:
+                    type: object
+                    properties:
+                      transaction:
+                        $ref: '#/components/schemas/TransactionDetailedResponse'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '404':
+          $ref: '#/components/responses/404TransactionNotFound'
+
+    delete:
+      tags:
+        - Transaction Management
+      summary: Delete transaction
+      description: Delete transaction and revert balance changes in associated wallets.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TransactionIdPathParam'
+      responses:
+        '200':
+          description: Transaction deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Transaction deleted successfully
+        '400':
+          description: Cannot delete transaction if balance would become negative
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: fail
+                message: "Cannot delete transaction: wallet balance would become negative"
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '404':
+          $ref: '#/components/responses/404TransactionNotFound'
+
+  # ==========================================
+  # BUDGET MANAGEMENT
+  # ==========================================
+  /budgets:
+    post:
+      tags:
+        - Budget Management
+      summary: Set monthly category budget
+      description: Create a monthly spending budget for a specific EXPENSE category.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBudgetInput'
+      responses:
+        '201':
+          description: Budget set successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Budget set successfully
+                  data:
+                    type: object
+                    properties:
+                      budget:
+                        $ref: '#/components/schemas/BudgetResponse'
+        '400':
+          description: Validation error, non-EXPENSE category, or budget already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                NotExpenseCategory:
+                  summary: Category Type Error
+                  value:
+                    status: fail
+                    message: Budgets can only be set for EXPENSE categories
+                DuplicateBudget:
+                  summary: Budget Exists Error
+                  value:
+                    status: fail
+                    message: Budget for this category and period already exists
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '404':
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: fail
+                message: Category not found
+
+  /budgets/status:
+    get:
+      tags:
+        - Budget Management
+      summary: Get monthly budget status and progress
+      description: Calculate actual spending vs budget limits for a specific month and year.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: month
+          in: query
+          required: true
+          description: Month number (1 to 12)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+            example: 9
+        - name: year
+          in: query
+          required: true
+          description: Year number (>= 2000)
+          schema:
+            type: integer
+            minimum: 2000
+            example: 2026
+      responses:
+        '200':
+          description: Budget status calculated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/BudgetStatusResponse'
+        '400':
+          description: Missing or invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: fail
+                message: Validation Error
+                errors:
+                  - field: query.month
+                    message: Month must be between 1 and 12
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+
+  # ==========================================
+  # REPORTS & EXPORT
+  # ==========================================
+  /reports/summary:
+    get:
+      tags:
+        - Report & Analytics
+      summary: Get financial summary report
+      description: Calculate total income, total expense, and net cash flow within a date range.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: startDate
+          in: query
+          required: true
+          description: Start date in ISO 8601 format
+          schema:
+            type: string
+            format: date-time
+            example: 2026-09-01T00:00:00.000Z
+        - name: endDate
+          in: query
+          required: true
+          description: End date in ISO 8601 format (must be >= startDate)
+          schema:
+            type: string
+            format: date-time
+            example: 2026-09-30T23:59:59.999Z
+      responses:
+        '200':
+          description: Financial summary retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/ReportSummaryResponse'
+        '400':
+          description: Missing/invalid dates or startDate is after endDate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: fail
+                message: Validation Error
+                errors:
+                  - field: query.startDate
+                    message: Start date must be less than or equal to End date
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+
+  /reports/export:
+    get:
+      tags:
+        - Report & Analytics
+      summary: Export financial report file
+      description: Generate and download financial transaction report as PDF document or CSV file.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: format
+          in: query
+          required: true
+          description: File export format
+          schema:
+            type: string
+            enum: [pdf, csv]
+            example: pdf
+        - name: startDate
+          in: query
+          required: true
+          description: Start date in ISO 8601 format
+          schema:
+            type: string
+            format: date-time
+            example: 2026-09-01T00:00:00.000Z
+        - name: endDate
+          in: query
+          required: true
+          description: End date in ISO 8601 format
+          schema:
+            type: string
+            format: date-time
+            example: 2026-09-30T23:59:59.999Z
+      responses:
+        '200':
+          description: File report stream (PDF or CSV)
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              description: Attachment header with generated filename
+              example: attachment; filename="financial-report-1727442000000.pdf"
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            text/csv:
+              schema:
+                type: string
+                example: "Transaction ID,Date,Type,Amount,Currency,Source Wallet,Target Wallet,Category,Note\na1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d,2026-09-27T10:00:00.000Z,EXPENSE,150000,IDR,Main Wallet,,Food & Beverage,Lunch"
+        '400':
+          description: Invalid format or date validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: fail
+                message: Validation Error
+                errors:
+                  - field: query.format
+                    message: Format query parameter is required ('pdf' or 'csv')
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Provide Access Token here (format `Authorization: Bearer <JWT>`)."
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: refreshToken
+      description: Requires Refresh Token stored in HttpOnly Cookie.
+
+  parameters:
+    WalletIdPathParam:
+      name: id
+      in: path
+      required: true
+      description: Valid UUID of the wallet
+      schema:
+        type: string
+        format: uuid
+        example: 372336b6-e437-47ed-a2e7-d4068d6eadac
+
+    CategoryIdPathParam:
+      name: id
+      in: path
+      required: true
+      description: Valid UUID of the category
+      schema:
+        type: string
+        format: uuid
+        example: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+
+    TransactionIdPathParam:
+      name: id
+      in: path
+      required: true
+      description: Valid UUID of the transaction
+      schema:
+        type: string
+        format: uuid
+        example: a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d
+
+  schemas:
+    # --- Auth Schemas ---
+    RegisterInput:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          example: John Doe
+        email:
+          type: string
+          format: email
+          maxLength: 100
+          example: johndoe@example.com
+        password:
+          type: string
+          minLength: 8
+          maxLength: 100
+          description: Must contain at least one uppercase letter, one lowercase letter, and one number.
+          example: Password123!
+
+    LoginInput:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 100
+          example: johndoe@example.com
+        password:
+          type: string
+          minLength: 1
+          example: Password123!
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 372336b6-e437-47ed-a2e7-d4068d6eadac
+        name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          format: email
+          example: johndoe@example.com
+        role:
+          type: string
+          enum: [ADMIN, USER, VIEWER]
+          example: USER
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-09-27T10:00:00.000Z
+
+    UserLoginResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 372336b6-e437-47ed-a2e7-d4068d6eadac
+        name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          format: email
+          example: johndoe@example.com
+        role:
+          type: string
+          enum: [ADMIN, USER, VIEWER]
+          example: USER
+
+    UserProfileDetailed:
+      allOf:
+        - $ref: '#/components/schemas/UserProfile'
+        - type: object
+          properties:
+            updatedAt:
+              type: string
+              format: date-time
+              example: 2026-09-27T10:00:00.000Z
+
+    # --- Wallet Schemas ---
+    CreateWalletInput:
+      type: object
+      required:
+        - name
+        - currency
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: BCA IDR
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          description: 3-character ISO currency code (e.g. IDR, USD, EUR). Will automatically be converted to UPPERCASE.
+          example: IDR
+        balance:
+          type: number
+          minimum: 0
+          default: 0
+          example: 5000000
+
+    UpdateWalletInput:
+      type: object
+      description: At least one field (name or currency) must be provided.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: Main BCA IDR
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          example: IDR
+
+    WalletResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: e1a2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c
+        name:
+          type: string
+          example: BCA IDR
+        currency:
+          type: string
+          example: IDR
+        balance:
+          type: number
+          example: 5000000
+        userId:
+          type: string
+          format: uuid
+          example: 372336b6-e437-47ed-a2e7-d4068d6eadac
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-09-27T10:00:00.000Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2026-09-27T10:00:00.000Z
+
+    # --- Generic Error Schema ---
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: fail
+        message:
+          type: string
+          example: Error message detail
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: body.email
+              message:
+                type: string
+                example: Invalid email address
+
+    # --- Category Schemas ---
+    CreateCategoryInput:
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          example: Food & Beverage
+        type:
+          type: string
+          enum: [INCOME, EXPENSE, TRANSFER]
+          example: EXPENSE
+
+    CategoryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+        name:
+          type: string
+          example: Food & Beverage
+        type:
+          type: string
+          enum: [INCOME, EXPENSE, TRANSFER]
+          example: EXPENSE
+        userId:
+          type: string
+          format: uuid
+          example: 372336b6-e437-47ed-a2e7-d4068d6eadac
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-09-27T10:00:00.000Z
+
+    # --- Transaction Schemas ---
+    CreateTransactionInput:
+      type: object
+      required:
+        - walletId
+        - type
+        - amount
+      properties:
+        walletId:
+          type: string
+          format: uuid
+          example: e1a2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c
+        targetWalletId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Required if type is TRANSFER
+          example: f2b3c4d5-e6f7-8a9b-0c1d-2e3f4a5b6c7d
+        categoryId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Required if type is INCOME or EXPENSE
+          example: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+        type:
+          type: string
+          enum: [INCOME, EXPENSE, TRANSFER]
+          example: EXPENSE
+        amount:
+          type: number
+          minimum: 0.01
+          example: 150000
+        exchangeRate:
+          type: number
+          minimum: 0.01
+          default: 1.0
+          description: Required for cross-currency transfers
+          example: 1.0
+        note:
+          type: string
+          maxLength: 500
+          nullable: true
+          example: Monthly Grocery
+        date:
+          type: string
+          format: date-time
+          example: 2026-09-27T10:00:00.000Z
+
+    UpdateTransactionInput:
+      type: object
+      description: At least one field must be provided.
+      properties:
+        walletId:
+          type: string
+          format: uuid
+          example: e1a2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c
+        targetWalletId:
+          type: string
+          format: uuid
+          example: f2b3c4d5-e6f7-8a9b-0c1d-2e3f4a5b6c7d
+        categoryId:
+          type: string
+          format: uuid
+          example: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+        type:
+          type: string
+          enum: [INCOME, EXPENSE, TRANSFER]
+          example: EXPENSE
+        amount:
+          type: number
+          minimum: 0.01
+          example: 200000
+        exchangeRate:
+          type: number
+          minimum: 0.01
+          example: 1.0
+        note:
+          type: string
+          maxLength: 500
+          example: Updated Monthly Grocery
+        date:
+          type: string
+          format: date-time
+          example: 2026-09-27T12:00:00.000Z
+
+    TransactionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d
+        walletId:
+          type: string
+          format: uuid
+          example: e1a2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c
+        targetWalletId:
+          type: string
+          format: uuid
+          nullable: true
+          example: null
+        categoryId:
+          type: string
+          format: uuid
+          nullable: true
+          example: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+        type:
+          type: string
+          enum: [INCOME, EXPENSE, TRANSFER]
+          example: EXPENSE
+        amount:
+          type: number
+          example: 150000
+        currency:
+          type: string
+          example: IDR
+        exchangeRate:
+          type: number
+          example: 1.0
+        note:
+          type: string
+          nullable: true
+          example: Monthly Grocery
+        date:
+          type: string
+          format: date-time
+          example: 2026-09-27T10:00:00.000Z
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-09-27T10:00:00.000Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2026-09-27T10:00:00.000Z
+
+    TransactionDetailedResponse:
+      allOf:
+        - $ref: '#/components/schemas/TransactionResponse'
+        - type: object
+          properties:
+            wallet:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                  example: e1a2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c
+                name:
+                  type: string
+                  example: Main Wallet
+                currency:
+                  type: string
+                  example: IDR
+            targetWallet:
+              type: object
+              nullable: true
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                  example: f2b3c4d5-e6f7-8a9b-0c1d-2e3f4a5b6c7d
+                name:
+                  type: string
+                  example: Savings Wallet
+                currency:
+                  type: string
+                  example: IDR
+            category:
+              type: object
+              nullable: true
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                  example: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+                name:
+                  type: string
+                  example: Food & Beverage
+                type:
+                  type: string
+                  enum: [INCOME, EXPENSE, TRANSFER]
+                  example: EXPENSE
+
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 10
+        totalItems:
+          type: integer
+          example: 45
+        totalPages:
+          type: integer
+          example: 5
+        hasNextPage:
+          type: boolean
+          example: true
+        hasPrevPage:
+          type: boolean
+          example: false
+
+    # --- Budget Schemas ---
+    CreateBudgetInput:
+      type: object
+      required:
+        - categoryId
+        - amount
+        - month
+        - year
+      properties:
+        categoryId:
+          type: string
+          format: uuid
+          example: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+        amount:
+          type: number
+          minimum: 0.01
+          example: 1500000
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+          example: 9
+        year:
+          type: integer
+          minimum: 2000
+          example: 2026
+
+    BudgetResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: d9f8e7d6-c5b4-a3f2-e1d0-c9b8a7f6e5d4
+        userId:
+          type: string
+          format: uuid
+          example: 372336b6-e437-47ed-a2e7-d4068d6eadac
+        categoryId:
+          type: string
+          format: uuid
+          example: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+        amount:
+          type: number
+          example: 1500000
+        month:
+          type: integer
+          example: 9
+        year:
+          type: integer
+          example: 2026
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-09-27T10:00:00.000Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2026-09-27T10:00:00.000Z
+        category:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              example: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+            name:
+              type: string
+              example: Food & Beverage
+            type:
+              type: string
+              example: EXPENSE
+
+    BudgetItemStatus:
+      type: object
+      properties:
+        budgetId:
+          type: string
+          format: uuid
+          example: d9f8e7d6-c5b4-a3f2-e1d0-c9b8a7f6e5d4
+        category:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              example: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+            name:
+              type: string
+              example: Food & Beverage
+            type:
+              type: string
+              example: EXPENSE
+        month:
+          type: integer
+          example: 9
+        year:
+          type: integer
+          example: 2026
+        budgetAmount:
+          type: number
+          example: 1500000
+        actualSpent:
+          type: number
+          example: 450000
+        remaining:
+          type: number
+          example: 1050000
+        usagePercentage:
+          type: number
+          example: 30
+        isOverBudget:
+          type: boolean
+          example: false
+
+    BudgetStatusResponse:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            month:
+              type: integer
+              example: 9
+            year:
+              type: integer
+              example: 2026
+        summary:
+          type: object
+          properties:
+            totalBudget:
+              type: number
+              example: 3000000
+            totalSpent:
+              type: number
+              example: 1200000
+            totalRemaining:
+              type: number
+              example: 1800000
+            overallUsagePercentage:
+              type: number
+              example: 40
+            hasOverBudgetItems:
+              type: boolean
+              example: false
+        budgets:
+          type: array
+          items:
+            $ref: '#/components/schemas/BudgetItemStatus'
+
+    # --- Report Schemas ---
+    ReportSummaryResponse:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            startDate:
+              type: string
+              format: date-time
+              example: 2026-09-01T00:00:00.000Z
+            endDate:
+              type: string
+              format: date-time
+              example: 2026-09-30T23:59:59.999Z
+        summary:
+          type: object
+          properties:
+            totalIncome:
+              type: number
+              example: 10000000
+            totalExpense:
+              type: number
+              example: 3500000
+            netCashFlow:
+              type: number
+              example: 6500000
+
+  responses:
+    400BadRequest:
+      description: Request Body / Path / Query validation failed (Zod Error)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: fail
+            message: Validation Error
+            errors:
+              - field: body.password
+                message: Password must contain at least one uppercase letter
+
+    401Unauthorized:
+      description: Missing Authorization header or Access Token is invalid/expired
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            TokenMissing:
+              summary: Authorization header missing
+              value:
+                status: fail
+                message: Unauthorized access. Token missing.
+            TokenInvalid:
+              summary: Access Token expired or invalid
+              value:
+                status: fail
+                message: Invalid or expired access token
+
+    404WalletNotFound:
+      description: Wallet not found or does not belong to the user
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: fail
+            message: Wallet not found
+
+    404TransactionNotFound:
+      description: Transaction not found or does not belong to the user
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: fail
+            message: Transaction not found

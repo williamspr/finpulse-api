@@ -78,8 +78,7 @@ export class TransactionController {
 
             res.status(200).json({
                 status: "success",
-                message: "Transaction deleted successfully",
-                data: "OK"
+                message: "Transaction deleted successfully"
             });
         } catch (error) {
             next(error);

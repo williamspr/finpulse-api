@@ -1,0 +1,168 @@
+### Register user
+POST http://localhost:5000/api/v1/auth/register
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "User Alpha",
+  "email": "alpha@example.com",
+  "password": "Password123!"
+}
+
+### Login User
+POST http://localhost:5000/api/v1/auth/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "alpha@example.com",
+  "password": "Password123!"
+}
+
+### Refresh Token
+POST http://localhost:5000/api/v1/auth/refresh-token
+Accept: application/json
+Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NzkxZjkxOS0zZGFkLTQyZDMtOTY2OS05NTM1NGQ1ODYxOGMiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MDQ4MDEwOSwiZXhwIjoxNzkxMDg0OTA5fQ.3lRuKSUONV8ycLTz_AuqaWj_PkEur4IAgsYMVrQrlL8
+
+### Logout User
+POST http://localhost:5000/api/v1/auth/logout
+Content-Type: application/json
+Accept: application/json
+Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NzkxZjkxOS0zZGFkLTQyZDMtOTY2OS05NTM1NGQ1ODYxOGMiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MDQ3NzQyNSwiZXhwIjoxNzkxMDgyMjI1fQ.oS0pmcD-3HmBn2m13jQdHRI7rASWg4dBqrQLO-JYf6U
+
+{
+  "name": "User Alpha",
+  "email": "alpha@example.com",
+  "password": "Password123!"
+}
+
+### Get User Profile
+GET http://localhost:5000/api/v1/auth/me
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NzkxZjkxOS0zZGFkLTQyZDMtOTY2OS05NTM1NGQ1ODYxOGMiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MDQ3ODAyNCwiZXhwIjoxNzkwNDc4OTI0fQ.RLpRUKiWUb04axD8Rx5Apkjmw9ws9nkoQnmpnrjJxKc
+
+### Create Wallet
+POST http://localhost:5000/api/v1/wallets
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NzkxZjkxOS0zZGFkLTQyZDMtOTY2OS05NTM1NGQ1ODYxOGMiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MDQ3OTEyOSwiZXhwIjoxNzkwNDgwMDI5fQ.ZpWQuI_mtjAXnQP_Selwkexd7KHtq1cO5IAYGafzHlA
+
+{
+    "name": "BRI",
+    "currency": "idr",
+    "balance": 550000000
+}
+
+### Get Wallets
+GET http://localhost:5000/api/v1/wallets
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NzkxZjkxOS0zZGFkLTQyZDMtOTY2OS05NTM1NGQ1ODYxOGMiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MDQ3OTEyOSwiZXhwIjoxNzkwNDgwMDI5fQ.ZpWQuI_mtjAXnQP_Selwkexd7KHtq1cO5IAYGafzHlA
+
+### Get Wallet
+GET http://localhost:5000/api/v1/wallets/b4b7e03b-3d31-4167-8008-1b6177c0e6b2
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NzkxZjkxOS0zZGFkLTQyZDMtOTY2OS05NTM1NGQ1ODYxOGMiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MDQ3ODAyNCwiZXhwIjoxNzkwNDc4OTI0fQ.RLpRUKiWUb04axD8Rx5Apkjmw9ws9nkoQnmpnrjJxKc
+
+### Update Wallet
+PATCH http://localhost:5000/api/v1/wallets/4054ac0b-3fee-4bdf-8bfb-57f8d0db4fb1
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NzkxZjkxOS0zZGFkLTQyZDMtOTY2OS05NTM1NGQ1ODYxOGMiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MDQ3OTEyOSwiZXhwIjoxNzkwNDgwMDI5fQ.ZpWQuI_mtjAXnQP_Selwkexd7KHtq1cO5IAYGafzHlA
+
+{
+  "name": "BRI Priority"
+}
+
+### Delete Wallet
+DELETE http://localhost:5000/api/v1/wallets/b4b7e03b-3d31-4167-8008-1b6177c0e6b2
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NzkxZjkxOS0zZGFkLTQyZDMtOTY2OS05NTM1NGQ1ODYxOGMiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MDQ3ODAyNCwiZXhwIjoxNzkwNDc4OTI0fQ.RLpRUKiWUb04axD8Rx5Apkjmw9ws9nkoQnmpnrjJxKc
+
+### Create Category
+POST http://localhost:5000/api/v1/categories
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NzkxZjkxOS0zZGFkLTQyZDMtOTY2OS05NTM1NGQ1ODYxOGMiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MDQ3OTEyOSwiZXhwIjoxNzkwNDgwMDI5fQ.ZpWQuI_mtjAXnQP_Selwkexd7KHtq1cO5IAYGafzHlA
+
+{
+  "name": "Groceries",
+  "type": "EXPENSE"
+}
+
+### Get Category
+GET http://localhost:5000/api/v1/categories?type=INCOME
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NzkxZjkxOS0zZGFkLTQyZDMtOTY2OS05NTM1NGQ1ODYxOGMiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MDQ3OTEyOSwiZXhwIjoxNzkwNDgwMDI5fQ.ZpWQuI_mtjAXnQP_Selwkexd7KHtq1cO5IAYGafzHlA
+
+### Delete Category
+DELETE http://localhost:5000/api/v1/categories/5a912f64-a4fa-4f69-bf8a-7d9d84090109
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NzkxZjkxOS0zZGFkLTQyZDMtOTY2OS05NTM1NGQ1ODYxOGMiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MDQ3OTEyOSwiZXhwIjoxNzkwNDgwMDI5fQ.ZpWQuI_mtjAXnQP_Selwkexd7KHtq1cO5IAYGafzHlA
+
+### Create Transaction
+POST http://localhost:5000/api/v1/transactions
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NzkxZjkxOS0zZGFkLTQyZDMtOTY2OS05NTM1NGQ1ODYxOGMiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MDQ4MTEyNiwiZXhwIjoxNzkwNDgyMDI2fQ.3efzmh6rWhS6WBSN2kMbU_qrdSeB8M8eqYHwvLX3vtU
+
+{
+  "walletId": "4054ac0b-3fee-4bdf-8bfb-57f8d0db4fb1",
+  "categoryId": "f289eefa-a2da-4c9a-9468-4c8610cbf3c9",
+  "type": "EXPENSE",
+  "amount": 230000,
+  "date": "2026-10-18T00:00:00.000Z"
+}
+
+### Get Transactions
+GET http://localhost:5000/api/v1/transactions?type=EXPENSE
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NzkxZjkxOS0zZGFkLTQyZDMtOTY2OS05NTM1NGQ1ODYxOGMiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MDQ4MDEwOSwiZXhwIjoxNzkwNDgxMDA5fQ.jmWeoO0kPRiWKWkZ_luAFu496OQyZV9l3j76CtTM2-k
+
+### Get Transaction
+GET http://localhost:5000/api/v1/transactions/ffd40d3f-7115-4250-8c4d-a8e14dcab083
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NzkxZjkxOS0zZGFkLTQyZDMtOTY2OS05NTM1NGQ1ODYxOGMiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MDQ3OTEyOSwiZXhwIjoxNzkwNDgwMDI5fQ.ZpWQuI_mtjAXnQP_Selwkexd7KHtq1cO5IAYGafzHlA
+
+### Update Transaction
+PATCH http://localhost:5000/api/v1/transactions/37686eb2-e604-4503-b483-d4c3572a33fd
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NzkxZjkxOS0zZGFkLTQyZDMtOTY2OS05NTM1NGQ1ODYxOGMiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MDQ3OTEyOSwiZXhwIjoxNzkwNDgwMDI5fQ.ZpWQuI_mtjAXnQP_Selwkexd7KHtq1cO5IAYGafzHlA
+
+{
+  "amount": 100000,
+  "note": "Expensive Lunch"
+}
+
+### Delete Transaction
+DELETE http://localhost:5000/api/v1/transactions/ffd40d3f-7115-4250-8c4d-a8e14dcab083
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NzkxZjkxOS0zZGFkLTQyZDMtOTY2OS05NTM1NGQ1ODYxOGMiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MDQ4MDEwOSwiZXhwIjoxNzkwNDgxMDA5fQ.jmWeoO0kPRiWKWkZ_luAFu496OQyZV9l3j76CtTM2-k
+
+### Create Budgeting
+POST http://localhost:5000/api/v1/budgets
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NzkxZjkxOS0zZGFkLTQyZDMtOTY2OS05NTM1NGQ1ODYxOGMiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MDQ4MDEwOSwiZXhwIjoxNzkwNDgxMDA5fQ.jmWeoO0kPRiWKWkZ_luAFu496OQyZV9l3j76CtTM2-k
+
+{
+  "categoryId": "f289eefa-a2da-4c9a-9468-4c8610cbf3c9",
+  "amount": 15000000,
+  "month": 10,
+  "year": 2026
+}
+
+### Get the Budget and its Status
+GET http://localhost:5000/api/v1/budgets/status?month=10&year=2026
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NzkxZjkxOS0zZGFkLTQyZDMtOTY2OS05NTM1NGQ1ODYxOGMiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MDQ4MDEwOSwiZXhwIjoxNzkwNDgxMDA5fQ.jmWeoO0kPRiWKWkZ_luAFu496OQyZV9l3j76CtTM2-k
+
+### Get report summary
+GET http://localhost:5000/api/v1/reports/summary?startDate=2026-10-01T00:00:00.000Z&endDate=2026-10-31T23:59:59.999Z
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NzkxZjkxOS0zZGFkLTQyZDMtOTY2OS05NTM1NGQ1ODYxOGMiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MDQ4MTEyNiwiZXhwIjoxNzkwNDgyMDI2fQ.3efzmh6rWhS6WBSN2kMbU_qrdSeB8M8eqYHwvLX3vtU
+
+### Get Financial Report (Download)
+GET http://localhost:5000/api/v1/reports/export?format=csv&startDate=2026-10-01T00:00:00.000Z&endDate=2026-10-31T23:59:59.999Z
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NzkxZjkxOS0zZGFkLTQyZDMtOTY2OS05NTM1NGQ1ODYxOGMiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MDQ4MTEyNiwiZXhwIjoxNzkwNDgyMDI2fQ.3efzmh6rWhS6WBSN2kMbU_qrdSeB8M8eqYHwvLX3vtU

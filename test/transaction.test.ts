@@ -718,7 +718,6 @@ describe("DELETE /api/v1/transactions/:id", () => {
 
             expect(res.status).toBe(200);
             expect(res.body.status).toBe("success");
-            expect(res.body.data).toBe("OK");
             expect(res.body.message).toBe("Transaction deleted successfully");
 
             // 3. Verify Wallet Balance restored to 500k
@@ -746,7 +745,6 @@ describe("DELETE /api/v1/transactions/:id", () => {
 
             expect(res.status).toBe(200);
             expect(res.body.status).toBe("success");
-            expect(res.body.data).toBe("OK");
 
             // 3. Verify Wallet Balance restored to 500k
             wallet = await prisma.wallet.findUnique({ where: { id: walletAId } });
@@ -777,7 +775,6 @@ describe("DELETE /api/v1/transactions/:id", () => {
 
             expect(res.status).toBe(200);
             expect(res.body.status).toBe("success");
-            expect(res.body.data).toBe("OK");
 
             // 3. Verify Balances restored (A: 500k, B: 100k)
             walletA = await prisma.wallet.findUnique({ where: { id: walletAId } });
